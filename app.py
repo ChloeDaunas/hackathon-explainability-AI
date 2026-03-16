@@ -544,6 +544,84 @@ elif page == "⚖️ Audit Fairness":
             st.pyplot(fig, use_container_width=True)
             plt.close()
 
+    # ── AIF360 (à coller dans app.py, page Audit Fairness, avant le bloc AI Act) ──
+
+    st.markdown("---")
+    st.subheader("🔬 Validation AIF360 (IBM)")
+    st.markdown("<small style='color:#64748b'>Double vérification via la librairie officielle IBM.</small>", unsafe_allow_html=True)
+
+    try:
+        from aif360.datasets import BinaryLabelDataset
+        from aif360.metrics import ClassificationMetric
+        import warnings; warnings.filterwarnings("ignore")
+
+        def aif360_metrics(df_audit, sensitive_col, privileged_value):
+            df_aif = df_audit.copy()
+            df_aif["attr"] = (df_aif[sensitive_col] == privileged_value).astype(int)
+
+            aif_true = BinaryLabelDataset(
+                df=df_aif[["y_true", "attr"]].rename(columns={"y_true": "Termd"}),
+                label_names=["Termd"],
+                protected_attribute_names=["attr"],
+                favorable_label=0,
+                unfavorable_label=1,
+            )
+            aif_pred = aif_true.copy()
+            aif_pred.labels = df_aif["y_pred"].values.reshape(-1, 1)
+
+            m = ClassificationMetric(
+                aif_true, aif_pred,
+                privileged_groups=[{"attr": 1}],
+                unprivileged_groups=[{"attr": 0}],
+            )
+            return {
+                "spd": m.statistical_parity_difference(),
+                "di":  m.disparate_impact(),
+                "eod": m.equal_opportunity_difference(),
+                "aod": m.average_odds_difference(),
+            }
+
+        # Calcul séparé pour chaque attribut
+        aif_gender = aif360_metrics(results, "Sex",      "M")
+        aif_race   = aif360_metrics(results, "RaceDesc", "White")
+
+        def render_aif_cards(metrics):
+            col1, col2, col3, col4 = st.columns(4)
+            def card(col, label, value, ideal, acceptable_range=None):
+                ok = (acceptable_range[0] <= value <= acceptable_range[1]) if acceptable_range else abs(value) <= 0.1
+                color   = "#22c55e" if ok else "#f59e0b"
+                verdict = "✅ OK" if ok else "⚠️ À surveiller"
+                col.markdown(f"""
+                <div style='background:#1e293b;border:1px solid #334155;border-radius:12px;padding:16px;text-align:center'>
+                    <div style='font-size:1.6rem;font-weight:700;color:{color}'>{value:+.4f}</div>
+                    <div style='color:#94a3b8;font-size:0.8rem;margin-top:4px'>{label}</div>
+                    <div style='color:{color};font-size:0.85rem;margin-top:6px'>{verdict}</div>
+                    <div style='color:#475569;font-size:0.72rem'>idéal : {ideal}</div>
+                </div>""", unsafe_allow_html=True)
+            card(col1, "Statistical Parity Diff",  metrics["spd"], "0")
+            card(col2, "Disparate Impact",          metrics["di"],  "1", acceptable_range=(0.8, 1.25))
+            card(col3, "Equal Opportunity Diff",    metrics["eod"], "0")
+            card(col4, "Average Odds Difference",   metrics["aod"], "0")
+
+        aif_tab_g, aif_tab_r = st.tabs(["👤 Genre", "🌍 Ethnie"])
+        with aif_tab_g:
+            render_aif_cards(aif_gender)
+        with aif_tab_r:
+            render_aif_cards(aif_race)
+
+        st.markdown("""
+        <div class='alert-info' style='margin-top:12px'>
+        <strong style='color:#93c5fd'>ℹ️ Convention AIF360</strong><br>
+        <span style='color:#bfdbfe;font-size:0.88rem'>
+        AIF360 calcule <em>privilégié / non-privilégié</em>, soit l'inverse de nos métriques manuelles — les signes sont opposés mais les valeurs absolues sont cohérentes.
+        </span>
+        </div>""", unsafe_allow_html=True)
+
+    except ImportError:
+        st.info("AIF360 non installé — `pip install aif360`")
+    except Exception as e:
+        st.warning(f"Erreur AIF360 : {e}")
+
     # ── AI Act ────────────────────────────────────────────────────────────────
     st.markdown("---")
     st.subheader("🇪🇺 Classification EU AI Act")
