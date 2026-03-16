@@ -1,0 +1,3 @@
+Attribute,Privileged group,Unprivileged group,Dem. Parity Diff,Disparate Impact,Eq. Odds Diff
+Sex,M (Male),F (Female),-0.0355,0.8529,0.0636
+RaceDesc,White,Non-White,-0.0565,0.7742,0.1273
