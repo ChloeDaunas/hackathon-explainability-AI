@@ -1,0 +1,3 @@
+Attribut,Groupe privilégié,Dem. Parity Diff,Disparate Impact,Eq. Odds Diff
+Sex,M (Homme),0.0183,1.0662,0.1545
+RaceDesc,White,-0.0544,0.8258,0.1545
