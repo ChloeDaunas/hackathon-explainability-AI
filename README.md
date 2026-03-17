@@ -1,10 +1,5 @@
 # 🛡️ TalentGuard AI — Hackathon Trusted AI x HR
 
-> **Capgemini x ESILV** · March 16-17, 2026  
-> A responsible AI solution to prevent employee turnover
-
----
-
 ## 🎯 Objective
 
 An imaginary company is facing a high resignation rate. **TalentGuard AI** is a solution that helps HR management:
