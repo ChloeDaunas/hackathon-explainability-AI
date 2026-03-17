@@ -218,9 +218,10 @@ if page == "📊 Dashboard":
         fig.patch.set_facecolor("#1e293b")
         ax.set_facecolor("#1e293b")
 
+        sorted_scores = results["risk_score"].sort_values()
         colors = ["#22c55e" if s < 40 else "#f59e0b" if s < 60 else "#ef4444"
-                  for s in results["risk_score"]]
-        ax.bar(range(len(results)), results["risk_score"].sort_values(), color=colors, width=0.8)
+          for s in sorted_scores]
+        ax.bar(range(len(results)), sorted_scores, color=colors, width=0.8)
         ax.axhline(60, color="#ef4444", linestyle="--", linewidth=1, alpha=0.7, label="Seuil haut risque (60%)")
         ax.axhline(40, color="#f59e0b", linestyle="--", linewidth=1, alpha=0.7, label="Seuil risque moyen (40%)")
         ax.set_xlabel("Employés (triés par risque)", color="#94a3b8", fontsize=9)
@@ -250,6 +251,59 @@ if page == "📊 Dashboard":
         )
         top10 = top10.rename(columns={"risk_score": "Score (%)"}).drop(columns=["y_true"])
         st.dataframe(top10, use_container_width=True, height=370)
+    
+    st.markdown("---")
+
+    # ── Comparaison RF vs NLP ─────────────────────────────────────────────────
+    try:
+        nlp_df = pd.read_csv("data/HR_NLP_scores.csv")
+
+        st.subheader("📊 Impact du NLP — Comparaison des deux modèles")
+        st.markdown("<small style='color:#64748b'>Score RF = Random Forest sur données structurées · Score NLP = sentiment + satisfaction + engagement + absences</small>", unsafe_allow_html=True)
+
+        # Fusionner RF et NLP sur l'index commun
+        compare = results[["risk_score","y_true"]].copy()
+        compare["nlp_risk_pct"] = nlp_df.set_index(nlp_df.index)["nlp_risk_pct"].values[:len(compare)]
+        compare["delta"] = (compare["nlp_risk_pct"] - compare["risk_score"]).round(1)
+
+        col_rf, col_nlp, col_delta = st.columns(3)
+        with col_rf:
+            st.metric("Score moyen RF",  f"{compare['risk_score'].mean():.1f}%")
+        with col_nlp:
+            st.metric("Score moyen NLP", f"{compare['nlp_risk_pct'].mean():.1f}%")
+        with col_delta:
+            changed = (compare["delta"].abs() > 15).sum()
+            st.metric("Employés reclassés (Δ>15%)", f"{changed} / {len(compare)}")
+
+        # Scatter RF vs NLP
+        fig, ax = plt.subplots(figsize=(6, 3.5))
+        fig.patch.set_facecolor("#1e293b")
+        ax.set_facecolor("#1e293b")
+        colors_c = ["#ef4444" if t else "#22c55e" for t in compare["y_true"]]
+        ax.scatter(compare["risk_score"], compare["nlp_risk_pct"],
+                   c=colors_c, alpha=0.6, s=30)
+        ax.plot([0,100],[0,100], "--", color="#475569", linewidth=1, label="Ligne d'égalité")
+        ax.set_xlabel("Score RF (%)", color="#94a3b8", fontsize=9)
+        ax.set_ylabel("Score NLP (%)", color="#94a3b8", fontsize=9)
+        ax.set_title("RF vs NLP — points éloignés = apport du texte", color="#e2e8f0", fontsize=10)
+        ax.tick_params(colors="#64748b")
+        ax.spines[["top","right","left","bottom"]].set_color("#334155")
+        ax.legend(facecolor="#0f172a", labelcolor="#94a3b8", fontsize=8)
+        plt.tight_layout()
+        st.pyplot(fig, use_container_width=True)
+        plt.close()
+
+        st.markdown("""
+        <div class='alert-info'>
+        <strong style='color:#93c5fd'>💡 Comment lire ce graphique</strong><br>
+        <span style='color:#bfdbfe;font-size:0.88rem'>
+        Les points <strong>au-dessus</strong> de la ligne = le NLP détecte plus de risque que le RF seul → feedback négatif non capturé par les chiffres.<br>
+        Les points <strong>en dessous</strong> = le RF sur-estime le risque → l'employé s'exprime positivement malgré des indicateurs dégradés.
+        </span>
+        </div>""", unsafe_allow_html=True)
+
+    except FileNotFoundError:
+        st.info("Lancez `python src/nlp_pipeline.py` pour activer la comparaison NLP.")
 
     # ── Répartition par niveau de risque ──────────────────────────────────────
     st.markdown("---")
