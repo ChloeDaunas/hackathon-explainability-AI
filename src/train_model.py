@@ -110,3 +110,26 @@ with open("models/model_feature_columns.json", "w") as f:
 print("\n✓ Modèle sauvegardé : models/rf_model.joblib")
 print("✓ Feature columns   : models/model_feature_columns.json")
 print(f"  (référence tenure : {pd.Timestamp(reference_cutoff).date()})")
+
+# ── 8. Modèle réduit (top features > 0.025) ───────────────────────────────────
+threshold = 0.025
+selected_features = importance_df.loc[
+    importance_df["Importance"] > threshold, "Feature"
+].tolist()
+
+X_reduced = X[selected_features]
+X_train_r, X_test_r, y_train_r, y_test_r = train_test_split(
+    X_reduced, y, test_size=0.20, random_state=42, stratify=y
+)
+
+rf_reduced = RandomForestClassifier(n_estimators=100, random_state=42, class_weight="balanced", n_jobs=-1)
+rf_reduced.fit(X_train_r, y_train_r)
+
+print(f"\n=== Modèle réduit ({len(selected_features)} features > {threshold}) ===")
+print(classification_report(y_test_r, rf_reduced.predict(X_test_r), target_names=["Active","Left"], zero_division=0))
+
+joblib.dump(rf_reduced, "models/rf_model_reduced.joblib")
+with open("models/reduced_feature_columns.json", "w") as f:
+    json.dump(selected_features, f)
+
+print(f"✓ models/rf_model_reduced.joblib sauvegardé ({len(selected_features)} features)")
