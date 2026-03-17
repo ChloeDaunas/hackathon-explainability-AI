@@ -1,11 +1,6 @@
 # 🛡️ TalentGuard AI — Hackathon Trusted AI x HR
 
-> **Capgemini x ESILV** · March 16-17, 2026
-> A responsible AI solution to prevent employee turnover
-
----
-
-## 🎯 Objective
+## Objective
 
 An imaginary company is facing a high resignation rate. **TalentGuard AI** is a solution that helps HR management:
 
@@ -17,24 +12,12 @@ The project covers **two Trusted AI axes**:
 
 | Axis | What we do |
 |------|------------|
-| 🔒 **Cybersecurity** | GDPR anonymization, EU AI Act classification, input validation, exclusion of sensitive attributes |
-| ⚖️ **Ethics** | Fairness audit (gender, ethnicity), SHAP + LIME explainability, AIF360 validation |
+| **Cybersecurity** | GDPR anonymization, EU AI Act classification, input validation, exclusion of sensitive attributes |
+| **Ethics** | Fairness audit (gender, ethnicity), SHAP + LIME explainability, AIF360 validation |
 
 ---
 
-## 👤 Personas & Use Case
-
-**Main Use Case**: *Analysis and prevention of resignation risk*
-
-**Persona 1 — HR Manager**
-> *"I need to know which employees are at risk of leaving, why, and how to act — without discriminating."*
-
-**Persona 2 — Management / CTO**
-> *"I want a reliable, GDPR-compliant and explainable AI solution for my teams."*
-
----
-
-## 🗂️ Project Architecture
+## Project Architecture
 
 ```
 talentguard-ai/
@@ -72,7 +55,7 @@ talentguard-ai/
 
 ---
 
-## ⚙️ Installation
+## Installation
 
 **Requirements**: Python 3.10+
 
@@ -92,7 +75,7 @@ pip install -r requirements.txt
 
 ---
 
-## 🚀 Running the Pipeline
+## Running the Pipeline
 
 Execute the scripts in order:
 
@@ -117,7 +100,7 @@ The application is available at `http://localhost:8501`
 
 ---
 
-## 📊 Data
+## Data
 
 **Source**: [Human Resources Dataset — Kaggle (Rich Huebner & Carla Patalano)](https://www.kaggle.com/datasets/rhuebner/human-resources-data-set)
 
@@ -137,80 +120,8 @@ The application is available at `http://localhost:8501`
 | Masking | `Zip` → first 2 digits | Reduction of geographic precision |
 | Model exclusion | `Sex`, `RaceDesc`, `GenderID` | Retained only for fairness audit |
 
----
 
-## 🤖 Model Cards
-
-Two models are used — full documentation available in `/docs/`.
-
-### Random Forest (structured data)
-
-| Parameter | Value |
-|-----------|-------|
-| Algorithm | Random Forest Classifier |
-| Library | scikit-learn 1.5.0 |
-| `n_estimators` | 100 |
-| `class_weight` | balanced |
-| Split | 80% train / 20% test (stratified) |
-| Full model features | 133 columns after one-hot encoding |
-| Reduced model features | ~8 columns (importance > 0.025) |
-| **Precision (Left)** | **0.72** |
-| **Recall (Left)** | **0.62** |
-| **F1-score (Left)** | **0.67** |
-| **Accuracy** | **0.79** |
-
-**Top 5 features (SHAP)**: `TenureYears`, `Salary`, `EngagementSurvey`, `Absences`, `EmpSatisfaction`
-
-> Recall is the priority metric: missing a true resignation is more costly than a false alert.
-
-### NLP Model (text data)
-
-| Parameter | Value |
-|-----------|-------|
-| Algorithm | TF-IDF + Logistic Regression |
-| Library | scikit-learn 1.5.0 |
-| Vocabulary | 500 features, ngrams (1,2) |
-| `class_weight` | balanced |
-| **Recall (Left)** | **1.00** ⚠️ synthetic data |
-| **F1-score (Left)** | **0.95** |
-| **Accuracy** | **0.97** |
-
-> High NLP performance is due to the synthetic nature of the texts. Lower performance expected on real data.
-
----
-
-## ⚖️ Fairness Audit
-
-Metrics computed using AIF360 (IBM) + manual implementation on the test set (63 employees):
-
-| Attribute | Disparate Impact | Dem. Parity Diff | Eq. Odds Diff | Verdict |
-|-----------|-----------------|-----------------|----------------|---------|
-| Gender (M vs F) | 1.066 | +0.018 | 0.154 | ✅ DI OK · ⚠️ EOD to monitor |
-| Ethnicity (White vs others) | 0.826 | -0.054 | 0.154 | ✅ DI OK · ⚠️ EOD to monitor |
-
-**Interpretation rules:**
-- Disparate Impact: acceptable between **0.8 and 1.25** (80% rule)
-- Demographic Parity Diff: ideal = **0**, alert threshold = **±0.1**
-- Equalized Odds Diff: ideal = **0**, alert threshold = **0.1**
-
-The Equalized Odds signal (0.154) indicates the model is slightly less accurate at detecting true resignations for women and non-White groups → **mandatory human review on borderline cases (40–60% score)**.
-
----
-
-## 🇪🇺 EU AI Act Classification
-
-This system is classified as **HIGH RISK** (Annex III — HR and employment management systems).
-
-**Obligations implemented in this project:**
-- ✅ Mandatory human oversight (recommendations, no automated decisions)
-- ✅ Prediction traceability (scores saved to `fairness_audit_results.csv`)
-- ✅ Documented fairness audit (this README + `docs/MODEL_CARD_RF_EN.docx`)
-- ✅ Right to explanation (SHAP waterfall plot per employee in the app)
-- ✅ Input validation (Security page — adversarial input detection and logging)
-
----
-
-## 🖥️ Application — Pages
+## Application — Pages
 
 | Page | Content |
 |------|---------|
@@ -223,7 +134,7 @@ This system is classified as **HIGH RISK** (Annex III — HR and employment mana
 
 ---
 
-## 🌱 Frugal AI
+## Risk simulator
 
 The risk simulator uses a **reduced model** trained on only the most important features (importance > 0.025):
 
@@ -236,7 +147,7 @@ Same prediction quality · ~5x lighter · No GPU required.
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 ```
 Python 3.10
@@ -252,6 +163,3 @@ Python 3.10
 
 ---
 
-## 👥 Team
-
-Hackathon Trusted AI x HR — ESILV · Capgemini · March 2026
